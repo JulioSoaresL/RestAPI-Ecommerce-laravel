@@ -70,4 +70,34 @@ class User extends Authenticatable
     {
         return $this->tenants()->where('tenants.id', $tenantId)->exists();
     }
+
+    protected static array $rolePermissions = [
+        TenantRoleEnum::ADMIN->value => [
+            'products.create',
+            'products.update',
+            'products.delete',
+            'categories.manage',
+            'orders.manage',
+        ],
+        TenantRoleEnum::MANAGER->value => [
+            'products.create',
+            'products.update',
+            'categories.manage',
+        ],
+        TenantRoleEnum::SUPPORT->value => [
+            'orders.view',
+        ],
+    ];
+
+    public function hasPermissionInTenant(int|string $tenantId, string $permission): bool
+    {
+        $role = $this->roleInTenant($tenantId);
+
+        if (!$role) return false;
+
+        $roleKey = $role instanceof TenantRoleEnum ? $role->value : $role;
+        $permissions = static::$rolePermissions[$roleKey] ?? [];
+
+        return in_array($permission, $permissions);
+    }
 }
